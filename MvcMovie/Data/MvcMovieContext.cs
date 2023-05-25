@@ -14,6 +14,7 @@ namespace MvcMovie.Data
         {
         }
 
+
         public DbSet<MvcMovie.Models.Movie> Movie { get; set; } = default!;
     }
 }

@@ -20,11 +20,34 @@ namespace MvcMovie.Controllers
         }
 
         // GET: Movies
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string movieGenre,string? searchString)
         {
-              return _context.Movie != null ? 
-                          View(await _context.Movie.ToListAsync()) :
-                          Problem("Entity set 'MvcMovieContext.Movie'  is null.");
+            if(_context.Movie == null)
+            {
+                return Problem("Entity set 'MvcMovieContext.Movie'  is null.");
+            }
+            var movie = from m in _context.Movie select m;
+
+            IQueryable<string> genreQuery = from m in _context.Movie orderby m.Genre select m.Genre;
+
+            if (!String.IsNullOrEmpty(searchString)) movie = movie.Where(x => x.Title!.Contains(searchString));
+
+            if (!string.IsNullOrEmpty(movieGenre))movie = movie.Where(x => x.Genre!.Contains(movieGenre));
+
+            var movieGenreVM = new MovieGenreViewModel
+            {
+                Genres = new SelectList(await genreQuery.Distinct().ToListAsync()),
+                Movies = await movie.ToListAsync(),
+            };
+
+            return View(movieGenreVM);
+
+           // return View(await movie.ToListAsync());
+        }
+        [HttpPost]
+        public string Index(string? searchString, bool notUsed)
+        {
+            return "from [HttpPost]Index: filter on " + searchString;
         }
 
         // GET: Movies/Details/5
@@ -56,7 +79,7 @@ namespace MvcMovie.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,ReleaseDate,Genre,Price")] Movie movie)
+        public async Task<IActionResult> Create([Bind("Id,Title,ReleaseDate,Genre,Price,Rating")] Movie movie)
         {
             if (ModelState.IsValid)
             {
